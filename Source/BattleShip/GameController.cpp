@@ -32,27 +32,113 @@ void AGameController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-void AGameController::BlockClick() {
+
+void AGameController::BlockClick(int nro) {
 	switch (GameState) {
+
+		//setting board
 	case  0:
+		if (nro >= 0) Board[0][nro]->gridvalue = -Board[0][nro]->gridvalue;
 		validateBoard(0);
-		createBoard(1);
 		break;
 
+		// player shoots
+	case 1:
+		GameState = 2;
+		if (nro < 0) {
+			nro = -nro - 1;
+			if (shoot(nro, 1) == -1)GameState = 1;
+		}
+		if (GameState == 2) {
+			while (shoot(FMath::RandRange(0, 99), 0) == -1);
+			GameState = 1;
+		}
 	}
+
 }
+
+
+int AGameController::shoot(int nro, int boardNro) {
+
+	if (Board[boardNro][nro]->gridvalue < -1)return -1;
+	Board[boardNro][nro]->gridvalue -= 10;
+	if (Board[boardNro][nro]->gridvalue == -11) {
+		Board[boardNro][nro]->SetMaterial(3);
+		int neighbour[] = { 1, -1, 10, -10, -9, -11, 9, 11 };
+		std::unordered_set<int> surround;
+		bool sink = true;
+
+		for (const int i : {1, -1, 10, -10}) {
+			int check = nro;
+
+			do {
+				if (Board[boardNro][check]->gridvalue == -11)
+					for (const int n : neighbour) {
+						if (check + n < 0 || check + n > 99 ||
+							(check % 10 == 9 && (n == 11 || n == 1 || n == -9)) ||
+							(check % 10 == 0 && (n == -11 || n == -1 || n == 9)))
+							continue;
+						surround.insert(check + n);
+					}
+				check += i;
+				if (check < 0 || check > 99 ||
+					(check % 10 == 9 && (i == -1)) ||
+					(check % 10 == 0 && (i == 1))) break;
+
+				if (Board[boardNro][check]->gridvalue == -1) sink = false;
+
+
+			} while (sink && Board[boardNro][check]->gridvalue == -11);
+		}
+		if (sink) {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("BOOM  SHIP")));
+			for (const int i : surround) 
+				if (Board[boardNro][i]->gridvalue == 1) {
+					Board[boardNro][i]->gridvalue = -10;
+					Board[boardNro][i]->SetMaterial(4);
+				
+			}
+			
+		}
+		else {
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, TEXT("NOT SINK"));
+		}
+		return sink?2:1;
+	}
+	else {
+		Board[boardNro][nro]->SetMaterial(2);
+		return 0;
+	}
+	
+	
+	
+}
+
 void AGameController::OnClickRandom(int nro) {
 	createBoard(0);
+	validateBoard(0);
+
 }
-void AGameController::validateBoard(int nro) {
+bool AGameController::OnClickBegin(int nro) {
+	if (validateBoard(0)) { // sync?
+		GameState = 1;
+		createBoard(1);
+		return true;
+	}
+	return false;
+}
+
+
+bool AGameController::validateBoard(int nro) {
 	std::unordered_set<int> s;
 	std::unordered_set<int>::iterator it = s.begin();
 	for (int i = 0; i < 100; ++i) it = s.insert(it, i); // searchlist for set of numbers 0-99
 	int neighbour[] = { 1, -1, 10, -10, -9, -11, 9, 11 }; // offset to neighboursquares
 	int x_ok, y_ok; // ship has to be in x ways or y ways, not both.
-
+	bool valid=false;
 
 	while (!s.empty()) {
+		valid = true;
 		int squareNro = *s.begin();
 		s.erase(s.begin());
 		int size = 0;
@@ -108,15 +194,16 @@ void AGameController::validateBoard(int nro) {
 				}
 			}
 			int mat = (x_ok == -1 && y_ok == -1 || size > 5) ? 2 : 1;				//color ship valid or not valid
+			if (mat == 1)valid = false;
 			for (const int i : ship) {
-				Board[0][i]->SetMaterial(mat);
+				Board[nro][i]->SetMaterial(mat);
 			}
 
 
 		}
 
 	}
-
+	return valid;
 }
 
 void::AGameController::createBoard(int nro) {
@@ -206,24 +293,26 @@ void::AGameController::createBoard(int nro) {
 		shots--;
 	} while (!gotship);
 	for (int i = 0; i < 100; i++) {
-		Board[nro][i]->SetMaterial(4);
+		Board[nro][i]->gridvalue = 1;
 	}
 	for (int i : ships) {
-
-		Board[nro][i]->SetMaterial(2);
+		Board[nro][i]->gridvalue = -1;
 	}
 }
 
 void AGameController::CreateGrids() {
+
+	
 	for (int y = 0; y < 10; y++)
 		for (int x = 0; x < 10; x++) {
 			const float XOffset = x * 105 - 1150;
-			const float YOffset = y * 105 - 400;
+			const float YOffset = y * 105 - 550;
 			const FVector BlockLocation = FVector(XOffset, YOffset, 0.f) + GetActorLocation();
 			AMyBlock* NewBlock = GetWorld()->SpawnActor<AMyBlock>(BlockLocation, FRotator(0, 0, 0));
 			if (NewBlock != nullptr)
 			{
 				NewBlock->GC = this;
+				NewBlock->nro = (x + y * 10) ;
 				Board[0][x + y * 10] = NewBlock;
 
 			}
@@ -233,6 +322,7 @@ void AGameController::CreateGrids() {
 			if (NewBlock != nullptr)
 			{
 				NewBlock->GC = this;
+				NewBlock->nro = -(x+y * 10)-1;
 				Board[1][x + y * 10] = NewBlock;
 			}
 		}

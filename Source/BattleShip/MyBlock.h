@@ -26,6 +26,12 @@ public:
 	UPROPERTY()
 		class UMaterialInstance* RedMaterial;
 	UPROPERTY()
+		class UMaterialInstance* GridMaterial;
+	UPROPERTY()
+		class UMaterialInstance* MissMaterial;
+	UPROPERTY()
+		class UMaterialInstance* MarkedMaterial;
+	UPROPERTY()
 		class AGameController* GC;
 
 	UFUNCTION()
@@ -44,6 +50,7 @@ protected:
 public:
 
 	int gridvalue = 1;
+	int nro;
 	void SetMaterial(int matcolor);
 	FORCEINLINE class USceneComponent* GetDummyRoot() const { return DummyRoot; }/** Returns DummyRoot subobject **/
 	FORCEINLINE class UStaticMeshComponent* GetBlockMesh() const { return BlockMesh; }/** Returns BlockMesh subobject **/

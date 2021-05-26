@@ -16,12 +16,20 @@ void UMyUIWidget::NativeConstruct()
 
 	
 	if(!RandomizeField -> OnClicked.IsBound()) RandomizeField -> OnClicked.AddDynamic(this, &UMyUIWidget::OnClickRandom);
-	
+	if(!StartButton -> OnClicked.IsBound()) StartButton->OnClicked.AddDynamic(this, &UMyUIWidget::OnClickBegin);
 }
 
 
-
+void UMyUIWidget::OnClickBegin() {
+	
+	if (GC)
+		if (GC->OnClickBegin(1)) {
+			RandomizeField->SetVisibility(ESlateVisibility::Hidden);
+			StartButton->SetVisibility(ESlateVisibility::Hidden);
+		}
+}
 
 void UMyUIWidget::OnClickRandom() {
+	
 	if (GC)GC->OnClickRandom(1);
 }

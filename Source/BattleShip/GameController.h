@@ -20,12 +20,15 @@ public:
 		int32 Size;
 	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadOnly)
 		float BlockSpacing;
-	AGameController();
-	UFUNCTION() void OnClickRandom(int nro);
 
+	UFUNCTION() void OnClickRandom(int nro);
+	UFUNCTION() bool OnClickBegin(int nro);
+
+	AGameController();
+	
 protected:
 	void CreateGrids();
-	void validateBoard(int nro);
+	bool validateBoard(int nro);
 
 	virtual void BeginPlay() override;
 	int GameState;
@@ -33,8 +36,9 @@ protected:
 	AMyBlock* Board[2][100];
 	
 public:
-	void BlockClick();
+	void BlockClick(int nro);
 	void createBoard(int nro);
+	int shoot(int nro, int boardNro);
 	virtual void Tick(float DeltaTime) override;
 	FORCEINLINE class USceneComponent* GetDummyRoot() const { return DummyRoot; }
 };

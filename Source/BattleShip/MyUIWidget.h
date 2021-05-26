@@ -24,11 +24,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 		class UButton* RandomizeField;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
+		class UButton* StartButton;
 	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TSoftObjectPtr<AGameController> GC;
 	UFUNCTION() void OnClickRandom();
-
+	UFUNCTION() void OnClickBegin();
 
 };
