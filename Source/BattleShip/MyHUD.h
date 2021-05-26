@@ -26,10 +26,14 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 
-
+	UPROPERTY(EditAnywhere)
+		class AGameController* GC;
 	UPROPERTY(EditDefaultsOnly, Category = "Interactive")
 		TSubclassOf<UUserWidget> MyUIWidgetClass;
+	
+		
 
 private:
+	
 	UMyUIWidget* MyUIWidget;
 };

@@ -7,7 +7,7 @@
 
 
 #include "Runtime/UMG/Public/UMG.h"
-
+#include "GameController.h"
 #include "MyUIWidget.generated.h"
 
 /**
@@ -24,8 +24,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidget))
 		class UButton* RandomizeField;
-
-
+	
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSoftObjectPtr<AGameController> GC;
+	UFUNCTION() void OnClickRandom();
 
 
 };

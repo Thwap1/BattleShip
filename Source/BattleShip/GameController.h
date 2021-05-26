@@ -21,18 +21,20 @@ public:
 	UPROPERTY(Category = Grid, EditAnywhere, BlueprintReadOnly)
 		float BlockSpacing;
 	AGameController();
+	UFUNCTION() void OnClickRandom(int nro);
 
 protected:
 	void CreateGrids();
-	void validateBoard();
-	void createBoard();
+	void validateBoard(int nro);
+
 	virtual void BeginPlay() override;
 	int GameState;
 	int shipsizes[5] = { 5,4,3,3,2 }; // ship sizes on board
-	AMyBlock* Board1[100];
-	AMyBlock* Board2[100];
+	AMyBlock* Board[2][100];
+	
 public:
 	void BlockClick();
+	void createBoard(int nro);
 	virtual void Tick(float DeltaTime) override;
 	FORCEINLINE class USceneComponent* GetDummyRoot() const { return DummyRoot; }
 };

@@ -4,6 +4,7 @@
 #include "GameController.h"
 #include "MyBlock.h"
 #include "Engine/World.h"
+
 #include <unordered_set>
 
 
@@ -34,20 +35,16 @@ void AGameController::Tick(float DeltaTime)
 void AGameController::BlockClick() {
 	switch (GameState) {
 	case  0:
-		validateBoard();
-		createBoard();
+		validateBoard(0);
+		createBoard(1);
 		break;
 
 	}
-
-
-
-
-
-
 }
-
-void AGameController::validateBoard() {
+void AGameController::OnClickRandom(int nro) {
+	createBoard(0);
+}
+void AGameController::validateBoard(int nro) {
 	std::unordered_set<int> s;
 	std::unordered_set<int>::iterator it = s.begin();
 	for (int i = 0; i < 100; ++i) it = s.insert(it, i); // searchlist for set of numbers 0-99
@@ -59,8 +56,8 @@ void AGameController::validateBoard() {
 		int squareNro = *s.begin();
 		s.erase(s.begin());
 		int size = 0;
-		if (Board1[squareNro]->gridvalue == 1)
-			Board1[squareNro]->SetMaterial(-1);				//color emptysquare blue
+		if (Board[nro][squareNro]->gridvalue == 1)
+			Board[nro][squareNro]->SetMaterial(-1);				//color emptysquare blue
 		else {																		//found first hit 
 			size++;
 
@@ -87,8 +84,8 @@ void AGameController::validateBoard() {
 			while (!checklist.empty()) {											//iterate checklist until empty
 				squareNro = *checklist.begin();
 				checklist.erase(checklist.begin());
-				if (Board1[squareNro]->gridvalue == 1)
-					Board1[squareNro]->SetMaterial(-1);		//color emptysquare blue
+				if (Board[nro][squareNro]->gridvalue == 1)
+					Board[nro][squareNro]->SetMaterial(-1);		//color emptysquare blue
 				else {																//found next shippart	
 					ship.insert(squareNro);
 					if (x_ok != squareNro % 10) x_ok = -1;
@@ -112,7 +109,7 @@ void AGameController::validateBoard() {
 			}
 			int mat = (x_ok == -1 && y_ok == -1 || size > 5) ? 2 : 1;				//color ship valid or not valid
 			for (const int i : ship) {
-				Board1[i]->SetMaterial(mat);
+				Board[0][i]->SetMaterial(mat);
 			}
 
 
@@ -122,7 +119,7 @@ void AGameController::validateBoard() {
 
 }
 
-void::AGameController::createBoard() {
+void::AGameController::createBoard(int nro) {
 	int shots = 100;																// shooting random holes before setting board
 	bool gotship = false;														// ships done
 	std::unordered_set<int> ships;
@@ -209,11 +206,11 @@ void::AGameController::createBoard() {
 		shots--;
 	} while (!gotship);
 	for (int i = 0; i < 100; i++) {
-		Board2[i]->SetMaterial(4);
+		Board[nro][i]->SetMaterial(4);
 	}
 	for (int i : ships) {
 
-		Board2[i]->SetMaterial(2);
+		Board[nro][i]->SetMaterial(2);
 	}
 }
 
@@ -227,7 +224,7 @@ void AGameController::CreateGrids() {
 			if (NewBlock != nullptr)
 			{
 				NewBlock->GC = this;
-				Board1[x + y * 10] = NewBlock;
+				Board[0][x + y * 10] = NewBlock;
 
 			}
 			const float XOffset2 = x * 105 + 200;
@@ -236,7 +233,7 @@ void AGameController::CreateGrids() {
 			if (NewBlock != nullptr)
 			{
 				NewBlock->GC = this;
-				Board2[x + y * 10] = NewBlock;
+				Board[1][x + y * 10] = NewBlock;
 			}
 		}
 
