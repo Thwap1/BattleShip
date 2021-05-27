@@ -30,7 +30,8 @@ public:
 		class AGameController* GC;
 	UPROPERTY(EditDefaultsOnly, Category = "Interactive")
 		TSubclassOf<UUserWidget> MyUIWidgetClass;
-	
+	UFUNCTION()
+		void SetGameState(int state);
 		
 
 private:

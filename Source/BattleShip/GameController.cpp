@@ -3,6 +3,7 @@
 
 #include "GameController.h"
 #include "MyBlock.h"
+#include "MyHUD.h"
 #include "Engine/World.h"
 
 #include <unordered_set>
@@ -37,21 +38,35 @@ void AGameController::BlockClick(int nro) {
 	switch (GameState) {
 
 		//setting board
-	case  0:
-		if (nro >= 0) Board[0][nro]->gridvalue = -Board[0][nro]->gridvalue;
-		validateBoard(0);
+	case  0: case 1:
+		if (nro >= 0) {
+			Board[0][nro]->gridvalue = -Board[0][nro]->gridvalue;
+			GameStateChange(validateBoard(0) ? 1 : 0);
+		}
+		else {
+			if (GameState==1) {
+				GameStateChange(3);
+				CreateBoard(1);
+				shoot(-nro - 1, 1);
+				while (shoot(FMath::RandRange(0, 99), 0) == -1);
+				GameStateChange(2);
+				
+				
+				
+			}
+		}
 		break;
 
-		// player shoots
-	case 1:
-		GameState = 2;
+		
+	case 2:
+		
 		if (nro < 0) {
 			nro = -nro - 1;
-			if (shoot(nro, 1) == -1)GameState = 1;
-		}
-		if (GameState == 2) {
-			while (shoot(FMath::RandRange(0, 99), 0) == -1);
-			GameState = 1;
+			if (shoot(nro, 1) != -1){
+				GameState = 3;
+				while (shoot(FMath::RandRange(0, 99), 0) == -1);
+				GameState = 2;
+			}
 		}
 	}
 
@@ -115,30 +130,30 @@ int AGameController::shoot(int nro, int boardNro) {
 }
 
 void AGameController::OnClickRandom(int nro) {
-	createBoard(0);
-	validateBoard(0);
-
-}
-bool AGameController::OnClickBegin(int nro) {
-	if (validateBoard(0)) { // sync?
-		GameState = 1;
-		createBoard(1);
-		return true;
-	}
-	return false;
+	GameState = -1;
+	CreateBoard(0);
+	GameStateChange(validateBoard(0)?1:0);
+	
 }
 
+void AGameController::GameStateChange(int state) {
+	if (state == GameState)return;
+			AMyHUD* MyHUD = Cast<AMyHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+			if(MyHUD)MyHUD->SetGameState(state);
+	GameState = state;
+}
 
 bool AGameController::validateBoard(int nro) {
 	std::unordered_set<int> s;
 	std::unordered_set<int>::iterator it = s.begin();
+	std::vector<int> sizes{};
 	for (int i = 0; i < 100; ++i) it = s.insert(it, i); // searchlist for set of numbers 0-99
 	int neighbour[] = { 1, -1, 10, -10, -9, -11, 9, 11 }; // offset to neighboursquares
 	int x_ok, y_ok; // ship has to be in x ways or y ways, not both.
-	bool valid=false;
+	bool valid=true;
 
 	while (!s.empty()) {
-		valid = true;
+		
 		int squareNro = *s.begin();
 		s.erase(s.begin());
 		int size = 0;
@@ -193,8 +208,12 @@ bool AGameController::validateBoard(int nro) {
 					}
 				}
 			}
-			int mat = (x_ok == -1 && y_ok == -1 || size > 5) ? 2 : 1;				//color ship valid or not valid
-			if (mat == 1)valid = false;
+			int mat = (x_ok == -1 && y_ok == -1 || size > 5) ? 3 : 1;				//color ship valid or not valid
+			if (mat == 3)valid = false;
+			else {
+				UE_LOG(LogTemp, Warning, TEXT("found ship of size %d"),ship.size());
+				sizes.push_back(ship.size());
+			}
 			for (const int i : ship) {
 				Board[nro][i]->SetMaterial(mat);
 			}
@@ -203,13 +222,19 @@ bool AGameController::validateBoard(int nro) {
 		}
 
 	}
+	UE_LOG(LogTemp, Warning, TEXT("end of validation"));
+	shipsizes = sizes;
 	return valid;
 }
 
-void::AGameController::createBoard(int nro) {
+void::AGameController::CreateBoard(int nro) {
 	int shots = 100;																// shooting random holes before setting board
 	bool gotship = false;														// ships done
 	std::unordered_set<int> ships;
+	
+	std::vector<int> shipstemp = shipsizes;
+	if (shipsizes.size() == 0)
+		shipstemp = std::vector<int>{ 5,4,3,3,2 };
 	std::unordered_set<int> numerot;											// set with 0-99 numbers
 	std::unordered_set<int>::iterator it = numerot.begin();
 	int neighbour[] = { 1, -1, 10, -10, -9, -11, 9, 11 };
@@ -229,7 +254,7 @@ void::AGameController::createBoard(int nro) {
 			if (got != s.end()) s.erase(got);									// erasing possible places
 		}
 
-		for (int ship : shipsizes) {
+		for (int ship : shipstemp) {
 			gotship = false;
 			std::unordered_set<int> s3;											//suffle
 			std::unordered_set<int>::iterator it2 = s3.begin();					//suffle
@@ -252,7 +277,7 @@ void::AGameController::createBoard(int nro) {
 
 					if (FMath::RandRange(0, 1) == 1)dir = -dir;					//randomize testing direction 
 					int size = -1;
-
+					if (ship == 1) dir = 0; // ship of size 1 
 					for (int i = 0; i < 2; i++) {								//flip testing direction
 						dir = -dir;
 						int squareNro = beginSquare;
@@ -264,7 +289,7 @@ void::AGameController::createBoard(int nro) {
 								gotship = true;
 								while (size-- > 0) {
 									ships.insert(squareNro);
-
+									s.erase(squareNro);
 									for (int n : neighbour) {					//clear bordering areas too 
 										if ((squareNro % 10 == 9 && (n == 11 || n == 1 || n == -9)) ||
 											(squareNro % 10 == 0 && (n == -11 || n == -1 || n == 9)))
@@ -282,9 +307,9 @@ void::AGameController::createBoard(int nro) {
 							squareNro += dir;
 						}
 					}
-
+					
 					if (dir == 1 || dir == -1) dir = 10;						//change direction try to fit on other axis too.
-					else dir = 1;
+						else dir = 1;
 				}
 				s3.erase(s3.begin());
 			}
@@ -301,11 +326,16 @@ void::AGameController::createBoard(int nro) {
 }
 
 void AGameController::CreateGrids() {
-
+	FVector2D Result = FVector2D(1, 1);
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(Result);
+	}
 	
+	UE_LOG(LogTemp, Warning, TEXT("I just started running, %f"),Result[0]);
 	for (int y = 0; y < 10; y++)
 		for (int x = 0; x < 10; x++) {
-			const float XOffset = x * 105 - 1150;
+			const float XOffset = x * 105 - 1155;
 			const float YOffset = y * 105 - 550;
 			const FVector BlockLocation = FVector(XOffset, YOffset, 0.f) + GetActorLocation();
 			AMyBlock* NewBlock = GetWorld()->SpawnActor<AMyBlock>(BlockLocation, FRotator(0, 0, 0));
@@ -316,7 +346,7 @@ void AGameController::CreateGrids() {
 				Board[0][x + y * 10] = NewBlock;
 
 			}
-			const float XOffset2 = x * 105 + 200;
+			const float XOffset2 = x * 105+105;
 			const FVector BlockLocation2 = FVector(XOffset2, YOffset, 0.f) + GetActorLocation();
 			NewBlock = GetWorld()->SpawnActor<AMyBlock>(BlockLocation2, FRotator(0, 0, 0));
 			if (NewBlock != nullptr)

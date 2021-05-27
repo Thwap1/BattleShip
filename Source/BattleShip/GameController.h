@@ -5,7 +5,9 @@
 #include "CoreMinimal.h"
 #include "MyBlock.h"
 #include "GameFramework/Actor.h"
+#include <vector>
 #include "GameController.generated.h"
+
 
 UCLASS()
 class BATTLESHIP_API AGameController : public AActor
@@ -22,7 +24,7 @@ public:
 		float BlockSpacing;
 
 	UFUNCTION() void OnClickRandom(int nro);
-	UFUNCTION() bool OnClickBegin(int nro);
+	
 
 	AGameController();
 	
@@ -32,12 +34,13 @@ protected:
 
 	virtual void BeginPlay() override;
 	int GameState;
-	int shipsizes[5] = { 5,4,3,3,2 }; // ship sizes on board
+	std::vector<int> shipsizes{ 5,4,3,3,2 }; // ship sizes on board
 	AMyBlock* Board[2][100];
 	
 public:
 	void BlockClick(int nro);
-	void createBoard(int nro);
+	void CreateBoard(int nro);
+	void GameStateChange(int state);
 	int shoot(int nro, int boardNro);
 	virtual void Tick(float DeltaTime) override;
 	FORCEINLINE class USceneComponent* GetDummyRoot() const { return DummyRoot; }

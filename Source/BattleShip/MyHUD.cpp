@@ -36,3 +36,7 @@ void AMyHUD::DrawHUD()
 {
 	Super::DrawHUD();
 }
+void AMyHUD::SetGameState(int state) {
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Screen Message"));
+	if (MyUIWidget)MyUIWidget->SetGameState(state);
+}
