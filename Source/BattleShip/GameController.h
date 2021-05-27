@@ -24,12 +24,14 @@ public:
 		float BlockSpacing;
 
 	UFUNCTION() void OnClickRandom(int nro);
+	UFUNCTION() void OnClickAgain();
 	
 
 	AGameController();
 	
 protected:
 	void CreateGrids();
+	bool Victory(int n);
 	bool validateBoard(int nro);
 
 	virtual void BeginPlay() override;

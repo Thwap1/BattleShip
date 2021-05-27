@@ -32,7 +32,7 @@ public:
 		TSubclassOf<UUserWidget> MyUIWidgetClass;
 	UFUNCTION()
 		void SetGameState(int state);
-		
+	float t=150;
 
 private:
 	

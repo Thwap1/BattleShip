@@ -34,45 +34,67 @@ void AGameController::Tick(float DeltaTime)
 
 }
 
+/**
+* Listens Userinput from board.
+*  Gamestates go as:
+*	0: player still making board
+*   1: player still making board, but its valid to start shooting too
+*   2:
+*   4: playershoots
+*   5: bot shoots
+*   10: player wins
+*   11: defeat
+**/
 void AGameController::BlockClick(int nro) {
 	switch (GameState) {
-
-		//setting board
 	case  0: case 1:
 		if (nro >= 0) {
 			Board[0][nro]->gridvalue = -Board[0][nro]->gridvalue;
 			GameStateChange(validateBoard(0) ? 1 : 0);
 		}
 		else {
-			if (GameState==1) {
-				GameStateChange(3);
+			if (GameState == 1) {
+				GameStateChange(5);
 				CreateBoard(1);
-				shoot(-nro - 1, 1);
-				while (shoot(FMath::RandRange(0, 99), 0) == -1);
-				GameStateChange(2);
-				
-				
-				
+				if (shoot(-nro - 1, 1) == 0) {
+					while (shoot(FMath::RandRange(0, 99), 0) == -1 && GameState == 5);
+				}
+				if (GameState == 5) GameStateChange(4);
 			}
 		}
 		break;
 
-		
-	case 2:
-		
+
+	case 4:
 		if (nro < 0) {
 			nro = -nro - 1;
-			if (shoot(nro, 1) != -1){
-				GameState = 3;
-				while (shoot(FMath::RandRange(0, 99), 0) == -1);
-				GameState = 2;
+			if (shoot(nro, 1) == 0) {
+				GameState = 5;
+				while (shoot(FMath::RandRange(0, 99), 0) != 0 && GameState == 5);
+				if (GameState == 5)GameState = 4;
 			}
 		}
 	}
 
 }
 
+bool AGameController::Victory(int nro) {
+	for (AMyBlock* b : Board[nro]) {
+		if (b->gridvalue == -1)return false;
+	}
+	GameStateChange(11 - nro);
+	return true;
+}
 
+
+/**
+* shoots on grid 
+* return values
+*  -1 cant shoot here
+*  0 miss
+*  1 hit
+*  2 hit+ sink
+*/
 int AGameController::shoot(int nro, int boardNro) {
 
 	if (Board[boardNro][nro]->gridvalue < -1)return -1;
@@ -85,7 +107,6 @@ int AGameController::shoot(int nro, int boardNro) {
 
 		for (const int i : {1, -1, 10, -10}) {
 			int check = nro;
-
 			do {
 				if (Board[boardNro][check]->gridvalue == -11)
 					for (const int n : neighbour) {
@@ -106,17 +127,27 @@ int AGameController::shoot(int nro, int boardNro) {
 			} while (sink && Board[boardNro][check]->gridvalue == -11);
 		}
 		if (sink) {
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("BOOM  SHIP")));
-			for (const int i : surround) 
+			for (const int i : surround)
 				if (Board[boardNro][i]->gridvalue == 1) {
-					Board[boardNro][i]->gridvalue = -10;
+					Board[boardNro][i]->gridvalue -= 10;
 					Board[boardNro][i]->SetMaterial(4);
-				
-			}
-			
+
+				}
+			Victory(boardNro);
+
 		}
 		else {
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, TEXT("NOT SINK"));
+			for (int corners : {-9, -11, 9, 11}) {
+				if (nro + corners < 0 || nro + corners > 99 ||
+					(nro % 10 == 0 && (corners == -9 || corners == 9)) ||
+					(nro % 10 == 9 && (corners == 11 || corners == -11))) continue;
+				if (Board[boardNro][corners + nro]->gridvalue == 1) {
+					Board[boardNro][corners + nro]->gridvalue -= 10;
+					Board[boardNro][corners + nro]->SetMaterial(4);
+
+				}
+			}
+			
 		}
 		return sink?2:1;
 	}
@@ -124,8 +155,19 @@ int AGameController::shoot(int nro, int boardNro) {
 		Board[boardNro][nro]->SetMaterial(2);
 		return 0;
 	}
-	
-	
+}
+
+void AGameController::OnClickAgain() {
+	for (AMyBlock* b : Board[0]) {
+		if (b->gridvalue < -2) {
+			b->gridvalue += 10;
+		}
+	}
+	for (AMyBlock* b : Board[1]) {
+		b->SetMaterial(0);
+		
+	}
+	GameStateChange(validateBoard(0) ? 1 : 0);
 	
 }
 
@@ -138,6 +180,8 @@ void AGameController::OnClickRandom(int nro) {
 
 void AGameController::GameStateChange(int state) {
 	if (state == GameState)return;
+	
+	
 			AMyHUD* MyHUD = Cast<AMyHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
 			if(MyHUD)MyHUD->SetGameState(state);
 	GameState = state;
@@ -317,8 +361,8 @@ void::AGameController::CreateBoard(int nro) {
 		}
 		shots--;
 	} while (!gotship);
-	for (int i = 0; i < 100; i++) {
-		Board[nro][i]->gridvalue = 1;
+	for (AMyBlock* b : Board[nro]) {
+		b->gridvalue = 1;
 	}
 	for (int i : ships) {
 		Board[nro][i]->gridvalue = -1;
@@ -326,16 +370,10 @@ void::AGameController::CreateBoard(int nro) {
 }
 
 void AGameController::CreateGrids() {
-	FVector2D Result = FVector2D(1, 1);
-	if (GEngine && GEngine->GameViewport)
-	{
-		GEngine->GameViewport->GetViewportSize(Result);
-	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("I just started running, %f"),Result[0]);
 	for (int y = 0; y < 10; y++)
 		for (int x = 0; x < 10; x++) {
-			const float XOffset = x * 105 - 1155;
+			const float XOffset = x * 105 - 1050;
 			const float YOffset = y * 105 - 550;
 			const FVector BlockLocation = FVector(XOffset, YOffset, 0.f) + GetActorLocation();
 			AMyBlock* NewBlock = GetWorld()->SpawnActor<AMyBlock>(BlockLocation, FRotator(0, 0, 0));

@@ -81,6 +81,7 @@ void AMyBlock::HandleClicked()
 void AMyBlock::SetMaterial(int matColor) {
 
 	switch (matColor) {
+
 	case 1: BlockMesh->SetMaterial(0, BlueMaterial);
 		break;
 	case 2: BlockMesh->SetMaterial(0, MissMaterial);
