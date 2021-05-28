@@ -57,6 +57,7 @@ void AGameController::BlockClick(int nro) {
 			if (GameState == 1) {
 				GameStateChange(5);
 				CreateBoard(1);
+				Bot.setShipSizes(shipsizes);
 				if (shoot(-nro - 1, 1) == 0) {
 					while (GameState == 5 && Bot.ShotResult(shoot(Bot.Shoot(), 0)));
 				}

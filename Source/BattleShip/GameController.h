@@ -44,6 +44,7 @@ protected:
 	AMyBlock* Board[2][100];
 	
 public:
+	
 	void BlockClick(int nro);
 	void CreateBoard(int nro);
 	void GameStateChange(int state);

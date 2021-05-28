@@ -16,13 +16,14 @@ private:
 	int hit;
 	int target;
 	bool wait;
-	
+	int targetsize;
+	int maxship;
 	void bV(std::vector<int> dir, int square, int value);
 	int sizeDir(int dir, int square);
 	int firstDir(int dir, int square);
 	std::vector<int> randomOrder(std::vector<int> v);
 public:
-	
+	int Hunting();
 	MyBot();
 	bool ShotResult(int result);
 	void setShipSizes(std::vector<int> s);
