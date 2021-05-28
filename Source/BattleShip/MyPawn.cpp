@@ -60,9 +60,9 @@ void AMyPawn::CalcCamera(float DeltaTime, struct FMinimalViewInfo& OutResult)
 		GEngine->GameViewport->GetViewportSize(Result);
 	}
 	int maxsize = ((((int)Result[0]) >> 1) > (int)Result[1]) ? (int)Result[1] : ((int)Result[0]) >> 1;
-	
+	/* */
 	OutResult.Rotation = FRotator(-90.0f, -90.0f, 0.0f);
-	OutResult.Location = FVector(0.0f, 0.0f, 1000000/maxsize);
+	OutResult.Location = FVector(0.0f, 0.0f, 1100000/maxsize);
 }
 
 
