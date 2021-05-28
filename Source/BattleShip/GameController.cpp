@@ -25,6 +25,7 @@ void AGameController::BeginPlay()
 	Super::BeginPlay();
 	GameState = 0;
 	CreateGrids();
+	
 }
 
 // Called every frame
@@ -57,7 +58,7 @@ void AGameController::BlockClick(int nro) {
 				GameStateChange(5);
 				CreateBoard(1);
 				if (shoot(-nro - 1, 1) == 0) {
-					while (shoot(FMath::RandRange(0, 99), 0) == -1 && GameState == 5);
+					while (GameState == 5 && Bot.ShotResult(shoot(Bot.Shoot(), 0)));
 				}
 				if (GameState == 5) GameStateChange(4);
 			}
@@ -70,21 +71,28 @@ void AGameController::BlockClick(int nro) {
 			nro = -nro - 1;
 			if (shoot(nro, 1) == 0) {
 				GameState = 5;
-				while (shoot(FMath::RandRange(0, 99), 0) != 0 && GameState == 5);
+				while (GameState == 5 && Bot.ShotResult(shoot(Bot.Shoot(), 0)));
 				if (GameState == 5)GameState = 4;
 			}
 		}
-	}
+		break;
+	case 7:
+				GameState = 8;
+				while (GameState == 8 && Bot2.ShotResult(shoot(Bot2.Shoot(), 1)));
+				break;
+	case 8:
+		GameState = 7;
+		while (GameState == 7 && Bot.ShotResult(shoot(Bot.Shoot(), 0)));
+		break;
 
+	}
+	
+	
+if (GameState == 8 || GameState == 7) 
+	BlockClick(10);
 }
 
-bool AGameController::Victory(int nro) {
-	for (AMyBlock* b : Board[nro]) {
-		if (b->gridvalue == -1)return false;
-	}
-	GameStateChange(11 - nro);
-	return true;
-}
+
 
 
 /**
@@ -96,7 +104,7 @@ bool AGameController::Victory(int nro) {
 *  2 hit+ sink
 */
 int AGameController::shoot(int nro, int boardNro) {
-
+	
 	if (Board[boardNro][nro]->gridvalue < -1)return -1;
 	Board[boardNro][nro]->gridvalue -= 10;
 	if (Board[boardNro][nro]->gridvalue == -11) {
@@ -139,8 +147,8 @@ int AGameController::shoot(int nro, int boardNro) {
 		else {
 			for (int corners : {-9, -11, 9, 11}) {
 				if (nro + corners < 0 || nro + corners > 99 ||
-					(nro % 10 == 0 && (corners == -9 || corners == 9)) ||
-					(nro % 10 == 9 && (corners == 11 || corners == -11))) continue;
+					(nro % 10 == 0 && (corners == -11 || corners == 9)) ||
+					(nro % 10 == 9 && (corners == 11 || corners == -9))) continue;
 				if (Board[boardNro][corners + nro]->gridvalue == 1) {
 					Board[boardNro][corners + nro]->gridvalue -= 10;
 					Board[boardNro][corners + nro]->SetMaterial(4);
@@ -149,10 +157,12 @@ int AGameController::shoot(int nro, int boardNro) {
 			}
 			
 		}
+		
 		return sink?2:1;
 	}
 	else {
 		Board[boardNro][nro]->SetMaterial(2);
+		
 		return 0;
 	}
 }
@@ -167,6 +177,8 @@ void AGameController::OnClickAgain() {
 		b->SetMaterial(0);
 		
 	}
+	Bot.Reset();
+	Bot2.Reset();
 	GameStateChange(validateBoard(0) ? 1 : 0);
 	
 }
@@ -180,10 +192,8 @@ void AGameController::OnClickRandom(int nro) {
 
 void AGameController::GameStateChange(int state) {
 	if (state == GameState)return;
-	
-	
-			AMyHUD* MyHUD = Cast<AMyHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
-			if(MyHUD)MyHUD->SetGameState(state);
+	AMyHUD* MyHUD = Cast<AMyHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+	if(MyHUD)MyHUD->SetGameState(state);
 	GameState = state;
 }
 
@@ -399,3 +409,10 @@ void AGameController::CreateGrids() {
 
 }
 
+bool AGameController::Victory(int nro) {
+	for (AMyBlock* b : Board[nro]) {
+		if (b->gridvalue == -1)return false;
+	}
+	GameStateChange(11 - nro);
+	return true;
+}

@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "MyBlock.h"
 #include "GameFramework/Actor.h"
+#include "MyBot.h"
 #include <vector>
 #include "GameController.generated.h"
+
 
 
 UCLASS()
@@ -33,10 +35,12 @@ protected:
 	void CreateGrids();
 	bool Victory(int n);
 	bool validateBoard(int nro);
-
+	
 	virtual void BeginPlay() override;
 	int GameState;
 	std::vector<int> shipsizes{ 5,4,3,3,2 }; // ship sizes on board
+	MyBot Bot;
+	MyBot Bot2;
 	AMyBlock* Board[2][100];
 	
 public:
